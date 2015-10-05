@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="github.dijkstraj.tada" version="1.0.0">
+  <name>Tada</name>
+  <description>
+    A sample Tabris.js application.
+  </description>
+  <author email="jogchem@gmail.com" href="https://tabrisjs.com">
+    Jogchem Dijkstra
+  </author>
+</widget>
