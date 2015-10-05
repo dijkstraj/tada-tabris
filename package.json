@@ -1,0 +1,7 @@
+{
+  "main": "tada.js",
+  "dependencies": {
+    "aws-sdk": "^2.2.6",
+    "tabris": "^1.2.0"
+  }
+}
