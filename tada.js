@@ -17,12 +17,12 @@ var urlDisplay = tabris.create('TextView', {
   text: 'URL'
 }).appendTo(page);
 
-var soundsCollection = tabris.create("CollectionView", {
+var soundsCollection = tabris.create('CollectionView', {
   layoutData: {left: 0, right: 0, top: [urlDisplay, 5], bottom: 0},
   itemHeight: 72,
-  items: [],
+  refreshEnabled: true,
   initializeCell: function(cell) {
-    var titleTextView = tabris.create("TextView", {
+    var titleTextView = tabris.create('TextView', {
       layoutData: {left: 10, right: 10, top: 10},
       alignment: 'center'
     }).appendTo(cell);
@@ -30,7 +30,9 @@ var soundsCollection = tabris.create("CollectionView", {
       titleTextView.set("text", sound);
     });
   }
-}).on("select", function(target, value) {
+}).on('refresh', function() {
+  loadSounds();
+}).on('select', function(target, value) {
   var xhr = new tabris.XMLHttpRequest();
   xhr.open('GET', 'http://' + localStorage.getItem('url') + '/play/' + value);
   xhr.send();
@@ -84,19 +86,18 @@ function ping() {
   xhr.send();
 }
 
-function xhrOkHandler() {
-  urlDisplay.set('text', localStorage.getItem('url') + ' <b>OK</b>');
-}
-
-function xhrErrorHandler() {
-  urlDisplay.set('text', localStorage.getItem('url') + ' <b>ERROR</b>');
-}
-
-page.on('appear', function() {
-  urlDisplay.set('text', localStorage.getItem('url'));
+function loadSounds() {
+  soundsCollection.set({
+    refreshIndicator: true,
+    refreshMessage: 'loading...'
+  });
   var xhr = new tabris.XMLHttpRequest();
   xhr.onreadystatechange = function() {
     if (xhr.readyState === xhr.DONE) {
+      soundsCollection.set({
+        refreshIndicator: false,
+        refreshMessage: ''
+      });
       if (xhr.status === 200) {
         xhrOkHandler();
         var sounds = JSON.parse(xhr.responseText).sounds;
@@ -110,7 +111,19 @@ page.on('appear', function() {
   xhr.ontimeout = xhrErrorHandler;
   xhr.open('GET', 'http://' + localStorage.getItem('url') + '/list');
   xhr.send();
+}
 
+function xhrOkHandler() {
+  urlDisplay.set('text', localStorage.getItem('url') + ' <b>OK</b>');
+}
+
+function xhrErrorHandler() {
+  urlDisplay.set('text', localStorage.getItem('url') + ' <b>ERROR</b>');
+}
+
+page.on('appear', function() {
+  urlDisplay.set('text', localStorage.getItem('url'));
+  loadSounds();
   pingInterval = setInterval(ping, 5000);
 });
 
