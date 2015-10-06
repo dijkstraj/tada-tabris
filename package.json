@@ -1,5 +1,9 @@
 {
   "main": "tada.js",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/dijkstraj/tada-tabris.git"
+  },
   "dependencies": {
     "aws-sdk": "^2.2.6",
     "tabris": "^1.2.0"
