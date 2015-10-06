@@ -1,3 +1,5 @@
+var pingInterval;
+
 var page = tabris.create('Page', {
   topLevel: true,
   title: 'Tada'
@@ -11,7 +13,27 @@ var settingsPage = tabris.create('Page', {
 var urlDisplay = tabris.create('TextView', {
   layoutData: {top: 10, left: 10, right: 10},
   alignment: 'center',
+  markupEnabled: true,
   text: 'URL'
+}).appendTo(page);
+
+var soundsCollection = tabris.create("CollectionView", {
+  layoutData: {left: 0, right: 0, top: [urlDisplay, 5], bottom: 0},
+  itemHeight: 72,
+  items: [],
+  initializeCell: function(cell) {
+    var titleTextView = tabris.create("TextView", {
+      layoutData: {left: 10, right: 10, top: 10},
+      alignment: 'center'
+    }).appendTo(cell);
+    cell.on("change:item", function(widget, sound) {
+      titleTextView.set("text", sound);
+    });
+  }
+}).on("select", function(target, value) {
+  var xhr = new tabris.XMLHttpRequest();
+  xhr.open('GET', 'http://' + localStorage.getItem('url') + '/play/' + value);
+  xhr.send();
 }).appendTo(page);
 
 var urlPicker = tabris.create('Picker', {
@@ -46,30 +68,55 @@ settingsPage.on('appear', function() {
   urlPicker.set('items', JSON.parse(localStorage.getItem('urls')));
 });
 
+function ping() {
+  var xhr = new tabris.XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === xhr.DONE) {
+      if (xhr.status === 200) {
+        xhrOkHandler();
+      } else {
+        xhrErrorHandler();
+      }
+    }
+  };
+  xhr.ontimeout = xhrErrorHandler;
+  xhr.open('GET', 'http://' + localStorage.getItem('url') + '/ping');
+  xhr.send();
+}
+
+function xhrOkHandler() {
+  urlDisplay.set('text', localStorage.getItem('url') + ' <b>OK</b>');
+}
+
+function xhrErrorHandler() {
+  urlDisplay.set('text', localStorage.getItem('url') + ' <b>ERROR</b>');
+}
+
 page.on('appear', function() {
   urlDisplay.set('text', localStorage.getItem('url'));
+  var xhr = new tabris.XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === xhr.DONE) {
+      if (xhr.status === 200) {
+        xhrOkHandler();
+        var sounds = JSON.parse(xhr.responseText).sounds;
+        sounds.sort();
+        soundsCollection.set('items', sounds);
+      } else {
+        xhrErrorHandler();
+      }
+    }
+  };
+  xhr.ontimeout = xhrErrorHandler;
+  xhr.open('GET', 'http://' + localStorage.getItem('url') + '/list');
+  xhr.send();
+
+  pingInterval = setInterval(ping, 5000);
 });
 
-var sounds = [
-  'Hey',
-  'Listen',
-  'Look',
-  'Secret',
-  'Fanfare'
-];
-
-var prev = urlDisplay;
-for (var i = 0; i < sounds.length; i++) {
-  var sound = sounds[i];
-  var top = [prev, 10];
-  prev = tabris.create("Button", {
-    layoutData: {top: top, left: 10, right: 10, height: 80},
-    text: sound
-  }).appendTo(page);
-  prev.on('select', function(btn) {
-    urlDisplay.set('text', btn.get('text'));
-  });
-};
+page.on('disappear', function() {
+  clearInterval(pingInterval);
+});
 
 tabris.create('Drawer').append(tabris.create('PageSelector'));
 
